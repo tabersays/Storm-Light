@@ -7,12 +7,14 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.Switch;
 import android.widget.Toast;
 
 public class FlashLightActivity extends AppCompatActivity {
@@ -23,6 +25,11 @@ public class FlashLightActivity extends AppCompatActivity {
     Camera.Parameters camParams;
     String rearCamera;
     Button toggleButton;
+    Switch sosToggle;
+    Boolean isSOSOn;
+    Handler sosHandler;
+    Boolean[] sosArray;
+    int sosIndex;
 
     @Override
     @TargetApi(23)
@@ -75,6 +82,32 @@ public class FlashLightActivity extends AppCompatActivity {
                 toggleCamera();
             }
         });
+        isSOSOn = false;
+        sosToggle = (Switch) findViewById(R.id.sosSwitch);
+        sosToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggleSOS();
+            }
+        });
+
+        sosArray = new Boolean[] {
+                //S
+                true, true,
+                true, true,
+                true, true,
+                //O
+                true, false, true, false,
+                true, false, true, false,
+                true, false, true, false,
+                //S
+                true, true,
+                true, true,
+                true, true,
+                //break
+                false, false, false
+        };
+
     }
 
     @Override
@@ -94,6 +127,40 @@ public class FlashLightActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(null);
     }
+
+    public void toggleSOS() {
+        isSOSOn = !isSOSOn;
+        if(isSOSOn)
+            sosOn();
+        else
+            sosOff();
+    }
+
+    public void sosOff() {
+        sosHandler.removeCallbacksAndMessages(null);
+    }
+
+    public void sosOn() {
+        sosHandler = new Handler();
+        final int delay = 333; //milliseconds
+        sosIndex = 0;
+        if (isOn)
+            toggleCamera();
+
+        sosHandler.postDelayed(new Runnable(){
+            public void run(){
+                if(sosArray[sosIndex])
+                    toggleCamera();
+                sosIndex++;
+                if(sosIndex >= sosArray.length)
+                    sosIndex = 0;
+                sosHandler.postDelayed(this, delay);
+            }
+        }, delay);
+    }
+
+
+
     @TargetApi(23)
     public void toggleCamera() {
         try {
